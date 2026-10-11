@@ -9,6 +9,9 @@ services:
   db:
     build:
       context: ../../build/db
+      labels:
+        isoloom.managed: 'true'
+        isoloom.environment: xben-095-pab-users
     image: isoloom/xben-095-pab-users-db
     platform: linux/amd64
     hostname: db
@@ -38,6 +41,8 @@ services:
           memory: 1024M
     labels:
       isoloom.service.mysql: tcp:3306
+      isoloom.managed: 'true'
+      isoloom.environment: xben-095-pab-users
     restart: unless-stopped
   db-routes:
     image: alpine:3.20
@@ -59,17 +64,28 @@ services:
       db:
         condition: service_started
     restart: unless-stopped
+    labels:
+      isoloom.managed: 'true'
+      isoloom.environment: xben-095-pab-users
   web:
     build:
       context: ../../build/web
+      labels:
+        isoloom.managed: 'true'
+        isoloom.environment: xben-095-pab-users
     image: isoloom/xben-095-pab-users-web
     platform: linux/amd64
     hostname: web
     networks:
       lab:
         ipv4_address: 10.61.138.20
+    environment:
+      CTF_FLAG_MAIN: ${CTF_FLAG_MAIN:-}
     ports:
     - ${ISOLOOM_PUBLISH_ADDRESS:-127.0.0.1}:${ISOLOOM_PUBLISH_FIXED:+80}:80
+    volumes:
+    - web-ctf:/ctf
+    - isoloom-probe-amd64:/.isoloom-probe:ro
     healthcheck:
       test:
       - CMD
@@ -81,8 +97,6 @@ services:
       timeout: 3s
       retries: 60
       start_period: 10s
-    volumes:
-    - isoloom-probe-amd64:/.isoloom-probe:ro
     depends_on:
       isoloom-probe-amd64:
         condition: service_completed_successfully
@@ -97,6 +111,8 @@ services:
           memory: 512M
     labels:
       isoloom.service.web: http:80
+      isoloom.managed: 'true'
+      isoloom.environment: xben-095-pab-users
     restart: unless-stopped
   web-routes:
     image: alpine:3.20
@@ -118,6 +134,29 @@ services:
       web:
         condition: service_started
     restart: unless-stopped
+    labels:
+      isoloom.managed: 'true'
+      isoloom.environment: xben-095-pab-users
+  web-init-1:
+    image: isoloom/xben-095-pab-users-web
+    entrypoint:
+    - /bin/sh
+    - /isoloom/init/flag.sh
+    volumes:
+    - ../../ctf/flag.sh:/isoloom/init/flag.sh:ro
+    - web-ctf:/ctf
+    network_mode: service:web
+    environment:
+      CTF_FLAG_MAIN: ${CTF_FLAG_MAIN:-}
+    depends_on:
+      web:
+        condition: service_healthy
+      web-routes:
+        condition: service_healthy
+    restart: no
+    labels:
+      isoloom.managed: 'true'
+      isoloom.environment: xben-095-pab-users
   isoloom-check:
     image: curlimages/curl:8.11.1
     profiles:
@@ -141,8 +180,13 @@ services:
         condition: service_healthy
       web:
         condition: service_healthy
+      web-init-1:
+        condition: service_completed_successfully
       web-routes:
         condition: service_healthy
+    labels:
+      isoloom.managed: 'true'
+      isoloom.environment: xben-095-pab-users
   isoloom-check-db:
     image: curlimages/curl:8.11.1
     profiles:
@@ -160,8 +204,13 @@ services:
         condition: service_healthy
       web:
         condition: service_healthy
+      web-init-1:
+        condition: service_completed_successfully
       web-routes:
         condition: service_healthy
+    labels:
+      isoloom.managed: 'true'
+      isoloom.environment: xben-095-pab-users
   isoloom-check-web:
     image: curlimages/curl:8.11.1
     profiles:
@@ -179,8 +228,13 @@ services:
         condition: service_healthy
       web:
         condition: service_healthy
+      web-init-1:
+        condition: service_completed_successfully
       web-routes:
         condition: service_healthy
+    labels:
+      isoloom.managed: 'true'
+      isoloom.environment: xben-095-pab-users
   isoloom-probe-amd64:
     image: busybox:1.37.0-musl
     platform: linux/amd64
@@ -192,11 +246,24 @@ services:
     - isoloom-probe-amd64:/probe
     network_mode: none
     restart: no
+    labels:
+      isoloom.managed: 'true'
+      isoloom.environment: xben-095-pab-users
 networks:
   lab:
     ipam:
       config:
       - subnet: 10.61.138.0/24
         gateway: 10.61.138.1
+    labels:
+      isoloom.managed: 'true'
+      isoloom.environment: xben-095-pab-users
 volumes:
-  isoloom-probe-amd64: {}
+  web-ctf:
+    labels:
+      isoloom.managed: 'true'
+      isoloom.environment: xben-095-pab-users
+  isoloom-probe-amd64:
+    labels:
+      isoloom.managed: 'true'
+      isoloom.environment: xben-095-pab-users

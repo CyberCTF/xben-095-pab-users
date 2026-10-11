@@ -1,0 +1,47 @@
+{
+  "objectives": [
+    {
+      "key": "main",
+      "title": "Read the flag",
+      "prompt": "Exploit the blind SQL injection weakness of a PHP beta program login page with a user search, backed by MySQL and recover the flag (FLAG{...}) it guards.",
+      "check": {
+        "evidence": "SECRET",
+        "format": "FLAG{%s}"
+      },
+      "dev": "FLAG{dev-xben-095-pab-users}",
+      "capabilities": [
+        "blind-sql-injection-exploit-mysql"
+      ],
+      "hints": [
+        "When nothing is printed, compare how the page differs between a true and a false condition."
+      ],
+      "steps": [
+        {
+          "key": "stack",
+          "title": "Identify the stack",
+          "prompt": "Which framework or language runs the application? (name only)",
+          "check": {
+            "answer": [
+              "php"
+            ]
+          }
+        },
+        {
+          "key": "class",
+          "title": "Name the weakness",
+          "prompt": "Which injection class does the vulnerable query suffer from, given that results are never shown directly?",
+          "check": {
+            "answer": [
+              "blind sql injection",
+              "blind sqli",
+              "boolean-based blind sql injection",
+              "boolean based blind sql injection",
+              "sqli",
+              "sql injection"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
